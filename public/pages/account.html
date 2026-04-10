@@ -1,52 +1,105 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Account — Sick Fits</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;900&display=swap" rel="stylesheet"/>
-  <style>
-    body { font-family: 'Roboto Condensed', sans-serif; }
-    .nav-link::after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:0; height:2px; background:#dc2626; transition:width 0.4s cubic-bezier(1,-0.65,0,2.31); }
-    .nav-link:hover::after { width:calc(100% - 2rem); }
-    .nav-link::before { content:''; position:absolute; left:0; top:0; width:2px; height:100%; background:#d1d5db; transform:skewX(-20deg); }
-    .sick-fieldset::before { content:''; display:block; height:10px; background:linear-gradient(to right,#ff3019 0%,#e2b04a 50%,#ff3019 100%); }
-  </style>
-</head>
-<body class="bg-white text-[#393939]">
-  <header class="bg-[#393939] sticky top-0 z-40">
-    <div class="flex items-stretch justify-between px-6 py-4">
-      <div class="text-5xl ml-6 relative z-10 self-center">
-        <a href="/" class="bg-red-600 text-white uppercase px-6 py-1 no-underline font-black skew-x-[-20deg] inline-block">
-          Sick Fits
-        </a>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Account — Sick Fits</title>
+    <link rel="icon" href="/static/favicon.png" type="image/png" />
+    <link rel="stylesheet" href="/css/tailwind.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Roboto Condensed", sans-serif;
+      }
+      .nav-link::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 2px;
+        background: #dc2626;
+        transition: width 0.4s cubic-bezier(1, -0.65, 0, 2.31);
+      }
+      .nav-link:hover::after {
+        width: calc(100% - 2rem);
+      }
+      .nav-link::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        background: #d1d5db;
+        transform: skewX(-20deg);
+      }
+      .sick-fieldset::before {
+        content: "";
+        display: block;
+        height: 10px;
+        background: linear-gradient(
+          to right,
+          #ff3019 0%,
+          #e2b04a 50%,
+          #ff3019 100%
+        );
+      }
+    </style>
+  </head>
+  <body class="bg-white text-[#393939]">
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <div class="flex items-stretch justify-between px-6 py-4">
+        <div class="text-5xl ml-6 relative z-10 self-center">
+          <a
+            href="/"
+            class="bg-red-600 text-white uppercase px-6 py-1 no-underline font-black skew-x-[-20deg] inline-block"
+          >
+            Sick Fits
+          </a>
+        </div>
+        <nav
+          id="main-nav"
+          class="flex flex-wrap justify-end text-2xl font-black uppercase"
+        ></nav>
       </div>
-      <nav id="main-nav" class="flex flex-wrap justify-end text-2xl font-black uppercase"></nav>
+    </header>
+    <div class="max-w-4xl mx-auto px-6 py-10" id="account-container">
+      <p class="text-center text-2xl py-12 text-gray-400">Loading...</p>
     </div>
-  </header>
-  <div class="max-w-4xl mx-auto px-6 py-10" id="account-container">
-    <p class="text-center text-2xl py-12 text-gray-400">Loading...</p>
-  </div>
-  <script type="module">
-    import { api, getUser, isLoggedIn, toast, renderNav, updateCartBadge } from '/js/utils.js'
-    renderNav('main-nav')
-    updateCartBadge()
+    <script type="module">
+      import {
+        api,
+        getUser,
+        isLoggedIn,
+        toast,
+        renderNav,
+        updateCartBadge,
+      } from "/js/utils.js";
+      renderNav("main-nav");
+      updateCartBadge();
 
-    const inputCls = 'w-full px-2 py-1.5 text-base border border-[#393939] focus:outline-none focus:border-red-600'
-    const labelCls = 'block mb-4 font-semibold text-lg'
-    const spanCls  = 'block mb-1 text-sm font-bold uppercase tracking-wide'
-    const btnCls   = 'bg-red-600 text-white border-0 text-2xl font-semibold px-5 py-2 cursor-pointer disabled:opacity-50'
-    const formCls  = 'shadow-[0_0_5px_3px_rgba(0,0,0,0.05)] bg-black/[0.02] border-4 border-white p-5'
+      const inputCls =
+        "w-full px-2 py-1.5 text-base border border-[#393939] focus:outline-none focus:border-red-600";
+      const labelCls = "block mb-4 font-semibold text-lg";
+      const spanCls = "block mb-1 text-sm font-bold uppercase tracking-wide";
+      const btnCls =
+        "bg-red-600 text-white border-0 text-2xl font-semibold px-5 py-2 cursor-pointer disabled:opacity-50";
+      const formCls =
+        "shadow-[0_0_5px_3px_rgba(0,0,0,0.05)] bg-black/[0.02] border-4 border-white p-5";
 
-    if (!isLoggedIn()) {
-      document.getElementById('account-container').innerHTML =
-        `<div class="p-4 border-l-4 border-red-600 bg-red-50">
+      if (!isLoggedIn()) {
+        document.getElementById("account-container").innerHTML =
+          `<div class="p-4 border-l-4 border-red-600 bg-red-50">
            Please <a href="/pages/login.html" class="underline">sign in</a> to view your account.
-         </div>`
-    } else {
-      const user = getUser()
-      document.getElementById('account-container').innerHTML = `
+         </div>`;
+      } else {
+        const user = getUser();
+        document.getElementById("account-container").innerHTML = `
         <h1 class="bg-red-600 text-white inline-block px-1.5 py-1 text-4xl font-black -skew-x-3 mb-8">Your Account</h1>
         <div class="grid grid-cols-2 gap-8 mt-8">
           <div>
@@ -85,18 +138,24 @@
               </fieldset>
             </form>
           </div>
-        </div>`
+        </div>`;
 
-      document.getElementById('update-form').addEventListener('submit', e => {
-        e.preventDefault(); toast('Profile update coming soon!')
-      })
-      document.getElementById('pw-form').addEventListener('submit', e => {
-        e.preventDefault()
-        const fd = new FormData(e.target)
-        if (fd.get('new') !== fd.get('confirm')) { toast('Passwords do not match!', 'error'); return }
-        toast('Password change coming soon!')
-      })
-    }
-  </script>
-</body>
+        document
+          .getElementById("update-form")
+          .addEventListener("submit", (e) => {
+            e.preventDefault();
+            toast("Profile update coming soon!");
+          });
+        document.getElementById("pw-form").addEventListener("submit", (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          if (fd.get("new") !== fd.get("confirm")) {
+            toast("Passwords do not match!", "error");
+            return;
+          }
+          toast("Password change coming soon!");
+        });
+      }
+    </script>
+  </body>
 </html>

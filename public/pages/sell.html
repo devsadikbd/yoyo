@@ -4,7 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sell — Sick Fits</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/static/favicon.png" type="image/png"/>
+  <link rel="stylesheet" href="/css/tailwind.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;900&display=swap" rel="stylesheet"/>
   <style>
     body { font-family: 'Roboto Condensed', sans-serif; }
@@ -17,7 +18,7 @@
   </style>
 </head>
 <body class="bg-white text-[#393939]">
-  <header class="bg-[#393939] sticky top-0 z-40">
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
     <div class="flex items-stretch justify-between px-6 py-4">
       <div class="text-5xl ml-6 relative z-10 self-center">
         <a href="/" class="bg-red-600 text-white uppercase px-6 py-1 no-underline font-black skew-x-[-20deg] inline-block">
@@ -78,70 +79,73 @@
     import { api, getUser, toast, renderNav } from '/js/utils.js'
     renderNav('main-nav')
 
-    if (!getUser() || getUser().role !== 'ADMIN') {
+    const user = getUser()
+    const isAdmin = user?.role === 'ADMIN'
+
+    if (!isAdmin) {
       document.querySelector('.max-w-2xl').innerHTML =
         '<div class="p-4 border-l-4 border-red-600 bg-red-50"><p><strong>Access Denied.</strong> Admins only.</p></div>'
-    }
-
-    const editId = new URLSearchParams(location.search).get('id')
-    if (editId) {
-      document.getElementById('form-heading').textContent = 'Edit Item'
-      document.getElementById('submit-btn').textContent   = 'Save Changes!'
-      api(`/products/${editId}`).then(p => {
-        document.getElementById('f-name').value  = p.name
-        document.getElementById('f-price').value = (p.price / 100).toFixed(2)
-        document.getElementById('f-stock').value = p.stock
-        document.getElementById('f-desc').value  = p.description
-        if (p.imageUrl) {
-          const img = document.getElementById('img-preview')
-          img.src = p.imageUrl; img.classList.remove('hidden')
-        }
-        document.getElementById('cancel-btn').classList.remove('hidden')
-      })
-    }
-
-    document.getElementById('f-image').addEventListener('change', e => {
-      const file = e.target.files[0]
-      const img  = document.getElementById('img-preview')
-      if (file) { img.src = URL.createObjectURL(file); img.classList.remove('hidden') }
-      else { img.classList.add('hidden') }
-    })
-
-    document.getElementById('sell-form').addEventListener('submit', async e => {
-      e.preventDefault()
-      const errEl = document.getElementById('form-error')
-      errEl.classList.add('hidden')
-      const fd = new FormData()
-      fd.append('name',        document.getElementById('f-name').value)
-      fd.append('description', document.getElementById('f-desc').value)
-      fd.append('price',       document.getElementById('f-price').value)
-      fd.append('stock',       document.getElementById('f-stock').value)
-      const img = document.getElementById('f-image').files[0]
-      if (img) fd.append('image', img)
-      const fs  = document.getElementById('sell-fs')
-      const btn = document.getElementById('submit-btn')
-      fs.setAttribute('aria-busy','true'); fs.disabled = true; btn.textContent = 'Saving...'
-      try {
-        if (editId) { await api(`/products/${editId}`, { method:'PATCH', body:fd }); toast('Item updated!') }
-        else        { await api('/products',            { method:'POST',  body:fd }); toast('Item added! 🎉') }
-        window.location.href = '/'
-      } catch(err) {
-        errEl.textContent = `Error: ${err.message}`
-        errEl.classList.remove('hidden')
-      } finally {
-        fs.removeAttribute('aria-busy'); fs.disabled = false
-        btn.textContent = editId ? 'Save Changes!' : '+ Add Item!'
+    } else {
+      const editId = new URLSearchParams(location.search).get('id')
+      if (editId) {
+        document.getElementById('form-heading').textContent = 'Edit Item'
+        document.getElementById('submit-btn').textContent   = 'Save Changes!'
+        api(`/products/${editId}`).then(p => {
+          document.getElementById('f-name').value  = p.name
+          document.getElementById('f-price').value = (p.price / 100).toFixed(2)
+          document.getElementById('f-stock').value = p.stock
+          document.getElementById('f-desc').value  = p.description
+          if (p.imageUrl) {
+            const img = document.getElementById('img-preview')
+            img.src = p.imageUrl; img.classList.remove('hidden')
+          }
+          document.getElementById('cancel-btn').classList.remove('hidden')
+        })
       }
-    })
 
-    window.resetForm = () => {
-      document.getElementById('sell-form').reset()
-      document.getElementById('edit-id').value = ''
-      document.getElementById('form-heading').textContent = 'Sell an Item'
-      document.getElementById('submit-btn').textContent   = '+ Add Item!'
-      document.getElementById('cancel-btn').classList.add('hidden')
-      document.getElementById('form-error').classList.add('hidden')
-      document.getElementById('img-preview').classList.add('hidden')
+      document.getElementById('f-image').addEventListener('change', e => {
+        const file = e.target.files[0]
+        const img  = document.getElementById('img-preview')
+        if (file) { img.src = URL.createObjectURL(file); img.classList.remove('hidden') }
+        else { img.classList.add('hidden') }
+      })
+
+      document.getElementById('sell-form').addEventListener('submit', async e => {
+        e.preventDefault()
+        const errEl = document.getElementById('form-error')
+        errEl.classList.add('hidden')
+        const fd = new FormData()
+        fd.append('name',        document.getElementById('f-name').value)
+        fd.append('description', document.getElementById('f-desc').value)
+        fd.append('price',       document.getElementById('f-price').value)
+        fd.append('stock',       document.getElementById('f-stock').value)
+        const img = document.getElementById('f-image').files[0]
+        if (img) fd.append('image', img)
+        const fs  = document.getElementById('sell-fs')
+        const btn = document.getElementById('submit-btn')
+        fs.setAttribute('aria-busy','true'); fs.disabled = true; btn.textContent = 'Saving...'
+        try {
+          if (editId) { await api(`/products/${editId}`, { method:'PATCH', body:fd }); toast('Item updated!') }
+          else        { await api('/products',            { method:'POST',  body:fd }); toast('Item added! 🎉') }
+          window.location.href = '/'
+        } catch(err) {
+          errEl.textContent = `Error: ${err.message}`
+          errEl.classList.remove('hidden')
+        } finally {
+          fs.removeAttribute('aria-busy'); fs.disabled = false
+          btn.textContent = editId ? 'Save Changes!' : '+ Add Item!'
+        }
+      })
+
+      window.resetForm = () => {
+        document.getElementById('sell-form').reset()
+        document.getElementById('edit-id').value = ''
+        document.getElementById('form-heading').textContent = 'Sell an Item'
+        document.getElementById('submit-btn').textContent   = '+ Add Item!'
+        document.getElementById('cancel-btn').classList.add('hidden')
+        document.getElementById('form-error').classList.add('hidden')
+        document.getElementById('img-preview').classList.add('hidden')
+      }
     }
   </script>
 </body>

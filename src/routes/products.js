@@ -32,7 +32,9 @@ async function uploadToCloudinary(buffer, folder = 'sickfits') {
 router.get('/', async (req, res) => {
   try {
     const { search, page = 1, limit = 12 } = req.query
-    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const pageNum = Number.parseInt(page, 10) || 1
+    const limitNum = Number.parseInt(limit, 10) || 12
+    const skip = (pageNum - 1) * limitNum
     const where = search
       ? { OR: [
           { name: { contains: search, mode: 'insensitive' } },
@@ -41,14 +43,18 @@ router.get('/', async (req, res) => {
       : {}
     const [products, total] = await Promise.all([
       prisma.product.findMany({
-        where, skip, take: parseInt(limit),
+        where, skip, take: limitNum,
         orderBy: { createdAt: 'desc' }
       }),
       prisma.product.count({ where })
     ])
-    res.json({ products, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) })
-  } catch {
-    res.status(500).json({ error: 'Server error' })
+    res.json({ products, total, page: pageNum, totalPages: Math.ceil(total / limitNum) })
+  } catch (err) {
+    console.error('GET /api/products failed:', err)
+    const message = err?.code === 'EAI_AGAIN'
+      ? 'Database connection failed'
+      : err?.message || 'Server error'
+    res.status(500).json({ error: message })
   }
 })
 
@@ -65,8 +71,14 @@ router.get('/:id', async (req, res) => {
 router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
   try {
     const { name, description, price, stock } = req.body
-    if (!name || !description || !price)
+    if (!name || !description || price === undefined)
       return res.status(400).json({ error: 'name, description, and price are required' })
+
+    const priceNum = Math.round(parseFloat(price) * 100)
+    const stockNum = parseInt(stock) || 0
+
+    if (isNaN(priceNum))
+      return res.status(400).json({ error: 'Price must be a valid number' })
 
     let imageUrl = null
     let imagePublicId = null
@@ -81,8 +93,8 @@ router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
       data: {
         name,
         description,
-        price: Math.round(parseFloat(price) * 100),
-        stock: parseInt(stock) || 0,
+        price: priceNum,
+        stock: stockNum,
         imageUrl,
         imagePublicId
       }
@@ -102,8 +114,18 @@ router.patch('/:id', requireAdmin, upload.single('image'), async (req, res) => {
     const data = {}
     if (name) data.name = name
     if (description) data.description = description
-    if (price) data.price = Math.round(parseFloat(price) * 100)
-    if (stock !== undefined) data.stock = parseInt(stock)
+    
+    if (price !== undefined) {
+      const priceNum = Math.round(parseFloat(price) * 100)
+      if (isNaN(priceNum)) return res.status(400).json({ error: 'Price must be a valid number' })
+      data.price = priceNum
+    }
+    
+    if (stock !== undefined) {
+      const stockNum = parseInt(stock)
+      if (isNaN(stockNum)) return res.status(400).json({ error: 'Stock must be a valid number' })
+      data.stock = stockNum
+    }
 
     if (req.file) {
       if (existing.imagePublicId) {

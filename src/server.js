@@ -1,42 +1,63 @@
-import 'dotenv/config'
-import express from 'express'
-import cors from 'cors'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import authRoutes    from './routes/auth.js'
-import productRoutes from './routes/products.js'
-import cartRoutes    from './routes/cart.js'
-import orderRoutes   from './routes/orders.js'
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+import authRoutes from "./routes/auth.js";
+import productRoutes from "./routes/products.js";
+import cartRoutes from "./routes/cart.js";
+import orderRoutes from "./routes/orders.js";
 
-const app = express()
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const pub   = path.join(__dirname, '../public')
-const pages = path.join(pub, 'pages')
+const app = express();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pub = path.join(__dirname, "../public");
+const pages = path.join(pub, "pages");
 
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-app.use(express.static(pub))
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(pub));
 
-app.use('/api/auth',     authRoutes)
-app.use('/api/products', productRoutes)
-app.use('/api/cart',     cartRoutes)
-app.use('/api/orders',   orderRoutes)
+app.get("/favicon.ico", (_, res) =>
+  res.sendFile(path.join(pub, "static", "favicon.png")),
+);
 
-app.get('/',                (_, res) => res.sendFile(path.join(pages, 'index.html')))
-app.get('/pages/sell',      (_, res) => res.sendFile(path.join(pages, 'sell.html')))
-app.get('/pages/cart',      (_, res) => res.sendFile(path.join(pages, 'cart.html')))
-app.get('/pages/orders',    (_, res) => res.sendFile(path.join(pages, 'orders.html')))
-app.get('/pages/login',     (_, res) => res.sendFile(path.join(pages, 'login.html')))
-app.get('/pages/signup',    (_, res) => res.sendFile(path.join(pages, 'signup.html')))
-app.get('/pages/account',   (_, res) => res.sendFile(path.join(pages, 'account.html')))
-app.get('/pages/product',   (_, res) => res.sendFile(path.join(pages, 'product.html')))
-app.get('/pages/admin',     (_, res) => res.sendFile(path.join(pages, 'admin.html')))
+app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+
+app.get("/", (_, res) => res.sendFile(path.join(pages, "index.html")));
+app.get("/pages/sell", (_, res) => res.sendFile(path.join(pages, "sell.html")));
+app.get("/pages/cart", (_, res) => res.sendFile(path.join(pages, "cart.html")));
+app.get("/pages/orders", (_, res) =>
+  res.sendFile(path.join(pages, "orders.html")),
+);
+app.get("/pages/login", (_, res) =>
+  res.sendFile(path.join(pages, "login.html")),
+);
+app.get("/pages/signup", (_, res) =>
+  res.sendFile(path.join(pages, "signup.html")),
+);
+app.get("/pages/account", (_, res) =>
+  res.sendFile(path.join(pages, "account.html")),
+);
+app.get("/pages/product", (_, res) =>
+  res.sendFile(path.join(pages, "product.html")),
+);
+app.get("/pages/admin", (_, res) =>
+  res.sendFile(path.join(pages, "admin.html")),
+);
+app.get("/admin", (_, res) => res.sendFile(path.join(pages, "admin.html")));
 
 app.use((err, req, res, _next) => {
-  console.error(err)
-  res.status(err.status || 500).json({ error: err.message || 'Internal server error' })
-})
+  console.error(err);
+  res
+    .status(err.status || 500)
+    .json({ error: err.message || "Internal server error" });
+});
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => console.log(`Sick Fits running → http://localhost:${PORT}`))
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () =>
+  console.log(`Sick Fits running → http://localhost:${PORT}`),
+);

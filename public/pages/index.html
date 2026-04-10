@@ -4,7 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sick Fits!</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/static/favicon.png" type="image/png"/>
+  <link rel="stylesheet" href="/css/tailwind.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;900&display=swap" rel="stylesheet"/>
   <style>
     body { font-family: 'Roboto Condensed', sans-serif; }
@@ -29,7 +30,7 @@
 
   <!-- Header -->
   
-  <header class="bg-[#393939] sticky top-0 z-40">
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
     <div class="flex items-stretch justify-between px-6 py-4">
       <div class="text-5xl ml-6 relative z-10 self-center">
         <a href="/" class="bg-red-600 text-white uppercase px-6 py-1 no-underline font-black skew-x-[-20deg] inline-block">
@@ -170,13 +171,17 @@
             </h3>
             <p class="leading-8 font-light flex-1 px-5 text-xl">${p.description}</p>
             <div class="grid border-t border-gray-200 divide-x divide-gray-200"
-                 style="grid-template-columns:repeat(${getUser()?.role==='ADMIN'?3:2},1fr)">
+                 style="grid-template-columns:repeat(${getUser()?.role==='ADMIN'?4:2},1fr)">
               <a href="/pages/product.html?id=${p.id}"
                 class="bg-white text-center text-sm py-3 px-2 no-underline text-[#393939] hover:bg-gray-100 transition-colors">
                 Details
               </a>
               ${getUser()?.role === 'ADMIN'
-                ? `<a href="/pages/sell.html?id=${p.id}"
+                ? `<button onclick="addToCart('${p.id}')"
+                     class="bg-white text-center text-sm py-3 px-2 border-0 cursor-pointer font-[inherit] text-[#393939] hover:bg-gray-100 transition-colors">
+                     Add To Cart 🛒
+                   </button>
+                   <a href="/pages/sell.html?id=${p.id}"
                      class="bg-white text-center text-sm py-3 px-2 no-underline text-[#393939] hover:bg-gray-100 transition-colors">
                      Edit ✏️
                    </a>

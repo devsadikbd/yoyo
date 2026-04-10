@@ -3,23 +3,20 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin — Sick Fits</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Admin Dashboard — Sick Fits</title>
+  <link rel="icon" href="/static/favicon.png" type="image/png"/>
+  <link rel="stylesheet" href="/css/tailwind.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;900&display=swap" rel="stylesheet"/>
   <style>
     body { font-family: 'Roboto Condensed', sans-serif; }
     .nav-link::after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:0; height:2px; background:#dc2626; transition:width 0.4s cubic-bezier(1,-0.65,0,2.31); }
     .nav-link:hover::after { width:calc(100% - 2rem); }
     .nav-link::before { content:''; position:absolute; left:0; top:0; width:2px; height:100%; background:#d1d5db; transform:skewX(-20deg); }
-    .sick-fieldset::before { content:''; display:block; height:10px; background:linear-gradient(to right,#ff3019 0%,#e2b04a 50%,#ff3019 100%); }
-    @keyframes loading { from{background-position:0 0} to{background-position:100% 100%} }
-    .sick-fieldset[aria-busy="true"]::before { background-size:50% auto; animation:loading 0.5s linear infinite; }
-    .tab-active { border-bottom: 4px solid #dc2626; color: #dc2626; }
+    .metric-card::before { content:''; display:block; height:10px; background:linear-gradient(to right,#ff3019 0%,#e2b04a 50%,#ff3019 100%); }
   </style>
 </head>
 <body class="bg-white text-[#393939]">
-
-  <header class="bg-[#393939] sticky top-0 z-40">
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
     <div class="flex items-stretch justify-between px-6 py-4">
       <div class="text-5xl ml-6 relative z-10 self-center">
         <a href="/" class="bg-red-600 text-white uppercase px-6 py-1 no-underline font-black skew-x-[-20deg] inline-block">
@@ -29,282 +26,216 @@
       <nav id="main-nav" class="flex flex-wrap justify-end text-2xl font-black uppercase"></nav>
     </div>
   </header>
-  <div class="max-w-5xl mx-auto px-6 py-10">
 
-    <!-- Access denied -->
-    <div id="access-denied" class="hidden">
-      <div class="p-4 border-l-4 border-red-600 bg-red-50 mb-4">
-        <p><strong>Access Denied.</strong> You must be an admin to view this page.</p>
-      </div>
-      <a href="/" class="bg-red-600 text-white uppercase text-2xl font-medium px-6 py-3 -skew-x-2 no-underline inline-block hover:opacity-85">← Go Home</a>
-    </div>
-
-    <!-- Admin panel -->
-    <div id="admin-panel" class="hidden">
-      <h1 class="bg-red-600 text-white inline-block px-1.5 py-1 text-4xl font-black -skew-x-3 mb-6">Admin Panel</h1>
-
-      <!-- Tabs -->
-      <div class="flex border-b-4 border-gray-100 mb-8 mt-8">
-        <button id="tab-products" onclick="switchTab('products')"
-          class="tab-active bg-transparent border-0 text-2xl font-black uppercase px-6 py-3 cursor-pointer font-[inherit] transition-colors">
-          Products
-        </button>
-        <button id="tab-orders" onclick="switchTab('orders')"
-          class="bg-transparent border-0 text-2xl font-black uppercase px-6 py-3 cursor-pointer font-[inherit] text-gray-400 hover:text-[#393939] transition-colors border-b-4 border-transparent">
-          Orders
-        </button>
-      </div>
-
-      <!-- Products panel -->
-      <div id="panel-products">
-        <div class="grid grid-cols-[380px_1fr] gap-10 items-start">
-
-          <!-- Form -->
-          <div>
-            <h2 id="form-heading" class="text-3xl font-black mb-4">Add a Product</h2>
-            <div id="form-error" class="hidden p-3 border-l-4 border-red-600 bg-red-50 text-red-700 text-base mb-4"></div>
-            <form id="product-form" class="shadow-[0_0_5px_3px_rgba(0,0,0,0.05)] bg-black/[0.02] border-4 border-white p-5">
-              <fieldset id="product-fs" class="sick-fieldset border-0 p-0">
-                <label class="block mb-3 font-semibold">
-                  <span class="block mb-1 text-xs font-bold uppercase tracking-wide">Image</span>
-                  <input id="f-image" type="file" accept="image/*"
-                    class="w-full text-sm border border-[#393939] px-2 py-1 cursor-pointer bg-white"/>
-                </label>
-                <img id="img-preview" class="hidden w-full max-h-36 object-cover mb-3 border border-gray-200"/>
-                <label class="block mb-3 font-semibold">
-                  <span class="block mb-1 text-xs font-bold uppercase tracking-wide">Name</span>
-                  <input id="f-name" type="text" required placeholder="Product name"
-                    class="w-full px-2 py-1.5 text-sm border border-[#393939] focus:outline-none focus:border-red-600"/>
-                </label>
-                <div class="grid grid-cols-2 gap-3">
-                  <label class="block mb-3 font-semibold">
-                    <span class="block mb-1 text-xs font-bold uppercase tracking-wide">Price ($)</span>
-                    <input id="f-price" type="number" step="0.01" min="0" required placeholder="0.00"
-                      class="w-full px-2 py-1.5 text-sm border border-[#393939] focus:outline-none focus:border-red-600"/>
-                  </label>
-                  <label class="block mb-3 font-semibold">
-                    <span class="block mb-1 text-xs font-bold uppercase tracking-wide">Stock</span>
-                    <input id="f-stock" type="number" min="0" value="0" required
-                      class="w-full px-2 py-1.5 text-sm border border-[#393939] focus:outline-none focus:border-red-600"/>
-                  </label>
-                </div>
-                <label class="block mb-3 font-semibold">
-                  <span class="block mb-1 text-xs font-bold uppercase tracking-wide">Description</span>
-                  <textarea id="f-desc" required rows="3" placeholder="Describe the product..."
-                    class="w-full px-2 py-1.5 text-sm border border-[#393939] focus:outline-none focus:border-red-600 resize-y"></textarea>
-                </label>
-                <input type="hidden" id="edit-id"/>
-                <div class="flex gap-2 flex-wrap">
-                  <button type="submit" id="submit-btn"
-                    class="bg-red-600 text-white border-0 text-xl font-semibold px-4 py-2 cursor-pointer disabled:opacity-50">
-                    + Add Product!
-                  </button>
-                  <button type="button" id="cancel-btn" onclick="resetForm()"
-                    class="hidden bg-gray-200 text-[#393939] border-0 text-xl font-semibold px-4 py-2 cursor-pointer hover:bg-gray-300 transition-colors">
-                    Cancel
-                  </button>
-                </div>
-              </fieldset>
-            </form>
-          </div>
-
-          <!-- Product list -->
-          <div>
-            <h2 class="text-3xl font-black mb-4">All Products</h2>
-            <div id="products-list"><p class="text-center text-xl py-8 text-gray-400">Loading...</p></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Orders panel -->
-      <div id="panel-orders" class="hidden">
-        <div id="orders-list"><p class="text-center text-xl py-8 text-gray-400">Loading...</p></div>
-      </div>
-    </div>
-  </div>
+  <main class="max-w-7xl mx-auto px-6 py-10" id="admin-root">
+    <p class="text-center text-2xl py-12 text-gray-400">Loading dashboard...</p>
+  </main>
 
   <script type="module">
-    import { api, isAdmin, toast, formatPrice, renderNav } from '/js/utils.js'
+    import { api, getUser, isLoggedIn, renderNav, updateCartBadge, formatPrice, toast } from '/js/utils.js'
+
     renderNav('main-nav')
+    updateCartBadge()
 
-    if (!isAdmin()) {
-      document.getElementById('access-denied').classList.remove('hidden')
+    const root = document.getElementById('admin-root')
+
+    if (!isLoggedIn()) {
+      root.innerHTML = `<div class="p-4 border-l-4 border-red-600 bg-red-50">
+        <p><strong>Please sign in.</strong> Admin access requires an authenticated account.</p>
+      </div>`
+    } else if (getUser()?.role !== 'ADMIN') {
+      root.innerHTML = `<div class="p-4 border-l-4 border-red-600 bg-red-50">
+        <p><strong>Access Denied.</strong> Admins only.</p>
+      </div>`
     } else {
-      document.getElementById('admin-panel').classList.remove('hidden')
-      loadProducts()
+      root.innerHTML = `
+        <section class="mb-10">
+          <h1 class="bg-red-600 text-white inline-block px-1.5 py-1 text-4xl font-black -skew-x-3 mb-4">Admin Dashboard</h1>
+          <p class="text-xl text-gray-500">Control products, orders, and store activity from one place.</p>
+        </section>
+
+        <section id="metrics" class="grid gap-6 md:grid-cols-4 mb-10"></section>
+
+        <section class="grid gap-10 xl:grid-cols-[1.2fr_1fr]">
+          <div>
+            <div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+              <h2 class="text-3xl font-black m-0">Products</h2>
+              <a href="/pages/sell.html" class="bg-red-600 text-white no-underline px-4 py-2 text-xl font-bold">+ New Product</a>
+            </div>
+            <div id="products-panel" class="border border-gray-200 bg-white shadow-[0_12px_24px_0_rgba(0,0,0,0.06)]"></div>
+          </div>
+
+          <div>
+            <h2 class="text-3xl font-black mb-4">Recent Orders</h2>
+            <div id="orders-panel" class="border border-gray-200 bg-white shadow-[0_12px_24px_0_rgba(0,0,0,0.06)]"></div>
+          </div>
+        </section>
+      `
+
+      loadDashboard()
     }
 
-    window.switchTab = (tab) => {
-      document.getElementById('panel-products').classList.toggle('hidden', tab !== 'products')
-      document.getElementById('panel-orders').classList.toggle('hidden', tab !== 'orders')
-      const tabP = document.getElementById('tab-products')
-      const tabO = document.getElementById('tab-orders')
-      if (tab === 'products') {
-        tabP.classList.add('tab-active'); tabP.classList.remove('text-gray-400')
-        tabO.classList.remove('tab-active'); tabO.classList.add('text-gray-400')
-      } else {
-        tabO.classList.add('tab-active'); tabO.classList.remove('text-gray-400')
-        tabP.classList.remove('tab-active'); tabP.classList.add('text-gray-400')
-        loadOrders()
-      }
-    }
+    async function loadDashboard() {
+      const metricsEl = document.getElementById('metrics')
+      const productsEl = document.getElementById('products-panel')
+      const ordersEl = document.getElementById('orders-panel')
 
-    document.getElementById('f-image').addEventListener('change', e => {
-      const file = e.target.files[0]
-      const img  = document.getElementById('img-preview')
-      if (file) { img.src = URL.createObjectURL(file); img.classList.remove('hidden') }
-      else { img.classList.add('hidden') }
-    })
+      productsEl.innerHTML = `<div class="p-6 text-xl text-gray-400">Loading products...</div>`
+      ordersEl.innerHTML = `<div class="p-6 text-xl text-gray-400">Loading orders...</div>`
 
-    async function loadProducts() {
-      const el = document.getElementById('products-list')
       try {
-        const { products } = await api('/products?limit=100')
-        if (!products.length) { el.innerHTML = '<p class="text-xl py-8 text-gray-400">No products yet.</p>'; return }
-        el.innerHTML = '<div class="divide-y divide-gray-100">' + products.map(p => `
-          <div class="flex items-center gap-4 py-4">
-            <div class="w-16 h-16 shrink-0">
-              ${p.imageUrl
-                ? `<img src="${p.imageUrl}" class="w-full h-full object-cover"/>`
-                : '<div class="w-full h-full bg-gray-100"></div>'
-              }
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-bold text-base truncate m-0">${p.name}</p>
-              <p class="text-red-600 text-sm font-bold m-0">${formatPrice(p.price)}</p>
-              <p class="text-gray-400 text-xs m-0">${p.stock} in stock</p>
-            </div>
-            <div class="flex gap-2 shrink-0">
-              <button onclick="startEdit(${JSON.stringify(p).replace(/"/g,'&quot;')})"
-                class="px-3 py-1.5 border border-gray-200 bg-white text-sm cursor-pointer hover:bg-gray-100 font-[inherit] transition-colors">
-                Edit
-              </button>
-              <button onclick="deleteProduct('${p.id}','${p.name.replace(/'/g,"\\'")}'"
-                class="px-3 py-1.5 border border-red-200 text-red-600 bg-white text-sm cursor-pointer hover:bg-red-600 hover:text-white font-[inherit] transition-colors">
-                Delete
-              </button>
-            </div>
-          </div>`).join('') + '</div>'
-      } catch(err) {
-        el.innerHTML = `<div class="p-4 border-l-4 border-red-600 bg-red-50"><strong>Error:</strong> ${err.message}</div>`
+        const [{ products }, orders] = await Promise.all([
+          api('/products?limit=100'),
+          api('/orders/all')
+        ])
+
+        renderMetrics(metricsEl, products, orders)
+        renderProducts(productsEl, products)
+        renderOrders(ordersEl, orders)
+      } catch (err) {
+        const errorHtml = `<div class="p-4 border-l-4 border-red-600 bg-red-50 text-red-700">${err.message}</div>`
+        metricsEl.innerHTML = ''
+        productsEl.innerHTML = errorHtml
+        ordersEl.innerHTML = errorHtml
       }
     }
 
-    document.getElementById('product-form').addEventListener('submit', async e => {
-      e.preventDefault()
-      const errEl  = document.getElementById('form-error')
-      errEl.classList.add('hidden')
-      const editId = document.getElementById('edit-id').value
-      const fd = new FormData()
-      fd.append('name',        document.getElementById('f-name').value)
-      fd.append('description', document.getElementById('f-desc').value)
-      fd.append('price',       document.getElementById('f-price').value)
-      fd.append('stock',       document.getElementById('f-stock').value)
-      const img = document.getElementById('f-image').files[0]
-      if (img) fd.append('image', img)
-      const fs  = document.getElementById('product-fs')
-      const btn = document.getElementById('submit-btn')
-      fs.setAttribute('aria-busy','true'); fs.disabled = true; btn.textContent = 'Saving...'
-      try {
-        if (editId) { await api(`/products/${editId}`, { method:'PATCH', body:fd }); toast('Updated!') }
-        else        { await api('/products',            { method:'POST',  body:fd }); toast('Added! 🎉') }
-        resetForm(); loadProducts()
-      } catch(err) {
-        errEl.textContent = `Error: ${err.message}`
-        errEl.classList.remove('hidden')
-      } finally {
-        fs.removeAttribute('aria-busy'); fs.disabled = false
-        btn.textContent = editId ? 'Save Changes!' : '+ Add Product!'
+    function renderMetrics(el, products, orders) {
+      const inventoryValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0)
+      const lowStock = products.filter(p => p.stock > 0 && p.stock <= 3).length
+      const revenue = orders.reduce((sum, o) => sum + o.total, 0)
+
+      const metrics = [
+        { label: 'Products', value: products.length },
+        { label: 'Inventory', value: formatPrice(inventoryValue) },
+        { label: 'Orders', value: orders.length },
+        { label: 'Revenue', value: formatPrice(revenue) },
+        { label: 'Low Stock', value: lowStock }
+      ]
+
+      el.innerHTML = metrics.map(metric => `
+        <article class="metric-card border border-gray-200 bg-white shadow-[0_12px_24px_0_rgba(0,0,0,0.06)] p-5">
+          <p class="text-sm font-bold uppercase tracking-[0.2em] text-gray-500 mt-4 mb-2">${metric.label}</p>
+          <p class="text-4xl font-black m-0">${metric.value}</p>
+        </article>
+      `).join('')
+    }
+
+    function renderProducts(el, products) {
+      if (!products.length) {
+        el.innerHTML = `<div class="p-6 text-xl text-gray-400">No products yet.</div>`
+        return
       }
-    })
 
-    window.startEdit = (p) => {
-      document.getElementById('edit-id').value  = p.id
-      document.getElementById('f-name').value   = p.name
-      document.getElementById('f-desc').value   = p.description
-      document.getElementById('f-price').value  = (p.price / 100).toFixed(2)
-      document.getElementById('f-stock').value  = p.stock
-      document.getElementById('form-heading').textContent = 'Edit Product'
-      document.getElementById('submit-btn').textContent   = 'Save Changes!'
-      document.getElementById('cancel-btn').classList.remove('hidden')
-      if (p.imageUrl) {
-        const img = document.getElementById('img-preview')
-        img.src = p.imageUrl; img.classList.remove('hidden')
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-
-    window.resetForm = () => {
-      document.getElementById('product-form').reset()
-      document.getElementById('edit-id').value  = ''
-      document.getElementById('form-heading').textContent = 'Add a Product'
-      document.getElementById('submit-btn').textContent   = '+ Add Product!'
-      document.getElementById('cancel-btn').classList.add('hidden')
-      document.getElementById('form-error').classList.add('hidden')
-      document.getElementById('img-preview').classList.add('hidden')
-    }
-
-    window.deleteProduct = async (id, name) => {
-      if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
-      try { await api(`/products/${id}`, { method:'DELETE' }); toast(`Deleted!`); loadProducts() }
-      catch(err) { toast(err.message, 'error') }
-    }
-
-    async function loadOrders() {
-      const el = document.getElementById('orders-list')
-      el.innerHTML = '<p class="text-center text-xl py-8 text-gray-400">Loading...</p>'
-      try {
-        const orders = await api('/orders/all')
-        if (!orders.length) { el.innerHTML = '<p class="text-center text-xl py-8 text-gray-400">No orders yet.</p>'; return }
-        const statusColors = { PENDING:'bg-yellow-100 text-yellow-800', PROCESSING:'bg-blue-100 text-blue-800', SHIPPED:'bg-purple-100 text-purple-800', DELIVERED:'bg-green-100 text-green-800' }
-        el.innerHTML = '<div class="space-y-6">' + orders.map(order => `
-          <div class="border border-gray-100 shadow-[0_12px_24px_0_rgba(0,0,0,0.09)] border-t-[6px] border-t-red-600 overflow-hidden">
-            <div class="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-4 p-5 bg-gray-50 border-b border-gray-100 items-center">
-              <div>
-                <p class="text-xs uppercase font-bold text-gray-400 mb-1">Customer</p>
-                <p class="font-bold text-base m-0">${order.user.name}</p>
-                <p class="text-xs text-gray-400 m-0">${order.user.email}</p>
-              </div>
-              <div>
-                <p class="text-xs uppercase font-bold text-gray-400 mb-1">Total</p>
-                <p class="font-black text-xl text-red-600 m-0">${formatPrice(order.total)}</p>
-              </div>
-              <div>
-                <p class="text-xs uppercase font-bold text-gray-400 mb-1">Date</p>
-                <p class="text-sm m-0">${new Date(order.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</p>
-              </div>
-              <div>
-                <p class="text-xs uppercase font-bold text-gray-400 mb-1">Items</p>
-                <p class="text-sm m-0">${order.items.reduce((s,i)=>s+i.quantity,0)}</p>
-              </div>
-              <div>
-                <p class="text-xs uppercase font-bold text-gray-400 mb-1">Status</p>
-                <select onchange="updateStatus('${order.id}', this.value)"
-                  class="border border-gray-200 text-sm px-2 py-1 font-[inherit] cursor-pointer focus:outline-none focus:border-red-600 bg-white">
-                  ${['PENDING','PROCESSING','SHIPPED','DELIVERED'].map(s =>
-                    `<option value="${s}" ${s===order.status?'selected':''}>${s}</option>`
-                  ).join('')}
-                </select>
-              </div>
+      el.innerHTML = `
+        <div class="grid grid-cols-[1.2fr_120px_120px_180px] gap-x-4 px-5 py-4 border-b border-gray-200 text-sm uppercase tracking-wide font-bold text-gray-500">
+          <div>Product</div>
+          <div>Price</div>
+          <div>Stock</div>
+          <div>Actions</div>
+        </div>
+        ${products.map(product => `
+          <div class="grid grid-cols-[1.2fr_120px_120px_180px] gap-x-4 items-center px-5 py-4 border-b border-gray-100 last:border-b-0">
+            <div class="min-w-0">
+              <p class="text-xl font-bold m-0 truncate">${product.name}</p>
+              <p class="text-sm text-gray-500 m-0 truncate">${product.description}</p>
             </div>
-            <div class="p-4 flex flex-wrap gap-2">
-              ${order.items.map(i => `
-                <div class="flex items-center gap-2 bg-gray-100 px-3 py-2 text-sm">
-                  ${i.product.imageUrl ? `<img src="${i.product.imageUrl}" class="w-8 h-8 object-cover"/>` : ''}
-                  <span class="font-bold">${i.product.name}</span>
-                  <span class="text-gray-500">&times;${i.quantity}</span>
-                  <span class="text-red-600 font-bold">${formatPrice(i.price*i.quantity)}</span>
-                </div>`).join('')}
+            <div class="text-lg font-bold">${formatPrice(product.price)}</div>
+            <div class="text-lg ${product.stock === 0 ? 'text-red-600 font-black' : product.stock <= 3 ? 'text-amber-600 font-black' : ''}">
+              ${product.stock}
             </div>
-          </div>`).join('') + '</div>'
-      } catch(err) {
-        el.innerHTML = `<div class="p-4 border-l-4 border-red-600 bg-red-50"><strong>Error:</strong> ${err.message}</div>`
-      }
+            <div class="flex gap-2 flex-wrap">
+              <a href="/pages/sell.html?id=${product.id}" class="bg-black text-white no-underline px-3 py-2 text-sm font-bold">Edit</a>
+              <button data-delete-product="${product.id}" data-product-name="${escapeAttr(product.name)}" class="bg-red-600 text-white px-3 py-2 text-sm font-bold">Delete</button>
+            </div>
+          </div>
+        `).join('')}
+      `
+
+      el.querySelectorAll('[data-delete-product]').forEach(button => {
+        button.addEventListener('click', async () => {
+          const id = button.getAttribute('data-delete-product')
+          const name = button.getAttribute('data-product-name')
+          if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
+          button.disabled = true
+          try {
+            await api(`/products/${id}`, { method: 'DELETE' })
+            toast(`"${name}" deleted`)
+            loadDashboard()
+          } catch (err) {
+            toast(err.message, 'error')
+            button.disabled = false
+          }
+        })
+      })
     }
 
-    window.updateStatus = async (id, status) => {
-      try { await api(`/orders/${id}/status`, { method:'PATCH', body:JSON.stringify({ status }) }); toast(`Status → ${status}`) }
-      catch(err) { toast(err.message, 'error') }
+    function renderOrders(el, orders) {
+      if (!orders.length) {
+        el.innerHTML = `<div class="p-6 text-xl text-gray-400">No orders yet.</div>`
+        return
+      }
+
+      el.innerHTML = orders.map(order => `
+        <article class="p-5 border-b border-gray-100 last:border-b-0">
+          <div class="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <p class="text-lg font-black m-0">${order.user.name}</p>
+              <p class="text-sm text-gray-500 m-0">${order.user.email}</p>
+              <p class="text-sm text-gray-500 m-0">${new Date(order.createdAt).toLocaleString()}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-2xl font-black m-0">${formatPrice(order.total)}</p>
+              <p class="text-sm uppercase tracking-wide text-gray-500 m-0">${order.items.length} item${order.items.length !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+          <div class="mb-4 space-y-3">
+            ${order.items.map(item => `
+              <div class="grid grid-cols-[64px_1fr] gap-3 items-center">
+                ${item.product.imageUrl
+                  ? `<img src="${item.product.imageUrl}" alt="${item.product.name}" class="w-16 h-16 object-cover border border-gray-200"/>`
+                  : `<div class="w-16 h-16 bg-gray-100 border border-gray-200"></div>`
+                }
+                <div>
+                  <p class="text-sm font-bold text-[#393939] m-0">${item.product.name}</p>
+                  <p class="text-sm text-gray-500 m-0">${formatPrice(item.price)} x ${item.quantity}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="flex items-center justify-between gap-4 flex-wrap">
+            <span class="text-sm font-bold uppercase tracking-wide text-gray-500">Status</span>
+            <select data-order-status="${order.id}" class="border border-gray-300 px-3 py-2 text-sm font-bold">
+              ${['PENDING','PROCESSING','SHIPPED','DELIVERED'].map(status => `
+                <option value="${status}" ${order.status === status ? 'selected' : ''}>${status}</option>
+              `).join('')}
+            </select>
+          </div>
+        </article>
+      `).join('')
+
+      el.querySelectorAll('[data-order-status]').forEach(select => {
+        select.addEventListener('change', async () => {
+          const id = select.getAttribute('data-order-status')
+          const status = select.value
+          select.disabled = true
+          try {
+            await api(`/orders/${id}/status`, {
+              method: 'PATCH',
+              body: JSON.stringify({ status })
+            })
+            toast(`Order marked ${status}`)
+          } catch (err) {
+            toast(err.message, 'error')
+          } finally {
+            select.disabled = false
+          }
+        })
+      })
+    }
+
+    function escapeAttr(value) {
+      return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;')
     }
   </script>
 </body>
