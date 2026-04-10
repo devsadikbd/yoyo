@@ -7,99 +7,144 @@
   <link rel="icon" href="/static/favicon.png" type="image/png"/>
   <link rel="stylesheet" href="/css/tailwind.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;900&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/css/global.css"/>
   <style>
-    .cart-layout { display: grid; grid-template-columns: 1fr 300px; gap: 4rem; align-items: start; }
-    .cart-totals { background: var(--offWhite); padding: 2rem; }
-    .cart-totals h3 { border-bottom: 3px solid var(--lightGrey); padding-bottom: 1rem; font-size: 2rem; }
-    .cart-totals li { display: flex; justify-content: space-between; list-style: none; padding: 0.5rem 0; font-size: 1.4rem; }
-    .cart-totals ul { padding: 0; margin: 0; }
-    .checkout-btn { width: 100%; margin-top: 2rem; font-size: 1.5rem; padding: 1rem; }
-    .cart-item-qty { display: flex; align-items: center; gap: 1rem; }
-    .cart-item-qty button { background: var(--lightGrey); border: 0; width: 3rem; height: 3rem; font-size: 1.8rem; cursor: pointer; font-family: inherit; }
-    .cart-item-qty button:hover { background: var(--red); color: white; }
-    @media (max-width:700px) { .cart-layout { grid-template-columns: 1fr; } }
+    body { font-family: 'Roboto Condensed', sans-serif; }
+    .nav-link::after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:0; height:2px; background:#dc2626; transition:width 0.4s cubic-bezier(1,-0.65,0,2.31); }
+    .nav-link:hover::after { width:calc(100% - 2rem); }
+    .nav-link::before { content:''; position:absolute; left:0; top:0; width:2px; height:100%; background:#d1d5db; transform:skewX(-20deg); }
+    .cart-shell::before { content:''; display:block; height:10px; background:linear-gradient(to right,#ff3019 0%,#e2b04a 50%,#ff3019 100%); }
   </style>
 </head>
-<body>
-  <header class="site-header">
-    <div class="bar">
-      <div class="inner-nav">
-        <div class="logo"><a href="/">Sick Fits</a></div>
-        <nav class="nav-links" id="main-nav"></nav>
+<body class="bg-white text-[#393939]">
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <div class="flex items-stretch justify-between px-6 py-4">
+      <div class="text-5xl ml-6 relative z-10 self-center">
+        <a href="/" class="bg-red-600 text-white uppercase px-6 py-1 no-underline font-black skew-x-[-20deg] inline-block">
+          Sick Fits
+        </a>
       </div>
+      <nav id="main-nav" class="flex flex-wrap justify-end text-2xl font-black uppercase"></nav>
     </div>
   </header>
-  <div class="page-wrapper">
-    <h2 style="font-size:3rem;border-bottom:5px solid var(--offWhite);padding-bottom:2rem;margin-bottom:3rem">Your Cart</h2>
-    <div id="cart-container"><p class="loading">Loading...</p></div>
+
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <h1 class="bg-red-600 text-white inline-block px-1.5 py-1 text-4xl font-black -skew-x-3 mb-8">Your Cart</h1>
+    <div id="cart-container">
+      <p class="text-center text-2xl py-12 text-gray-400">Loading...</p>
+    </div>
   </div>
+
   <script type="module">
     import { api, isLoggedIn, toast, formatPrice, updateCartBadge, renderNav } from '/js/utils.js'
+
     renderNav('main-nav')
+    updateCartBadge()
 
     if (!isLoggedIn()) {
       document.getElementById('cart-container').innerHTML = `
-        <div class="error-message"><p><strong>Please sign in</strong> to view your cart.</p></div>
-        <a href="/pages/login.html" class="btn">Sign In</a>`
-    } else { loadCart() }
+        <div class="p-4 border-l-4 border-red-600 bg-red-50 text-red-700 mb-4">
+          <p><strong>Please sign in</strong> to view your cart.</p>
+        </div>
+        <a href="/pages/login.html" class="inline-block bg-red-600 text-white no-underline px-5 py-3 text-2xl font-semibold">Sign In</a>`
+    } else {
+      loadCart()
+    }
 
     async function loadCart() {
       try {
         const { items, total } = await api('/cart')
         updateCartBadge()
+
         if (!items.length) {
-          document.getElementById('cart-container').innerHTML = `<p style="font-size:2rem">Your cart is empty! <a href="/">Keep shopping →</a></p>`
+          document.getElementById('cart-container').innerHTML = `
+            <div class="border border-gray-100 shadow-[0_12px_24px_0_rgba(0,0,0,0.09)] p-8">
+              <p class="text-3xl font-black m-0 mb-3">Your cart is empty!</p>
+              <a href="/" class="text-red-600 text-xl font-bold no-underline">Keep shopping →</a>
+            </div>`
           return
         }
+
         document.getElementById('cart-container').innerHTML = `
-          <div class="cart-layout">
-            <div id="cart-items">
-              ${items.map(item => `
-                <div class="cart-item" id="ci-${item.id}">
-                  ${item.product.imageUrl ? `<img src="${item.product.imageUrl}" alt="${item.product.name}"/>` : `<div style="width:100px;height:100px;background:var(--offWhite)"></div>`}
-                  <div>
-                    <h3>${item.product.name}</h3>
-                    <p>${formatPrice(item.product.price)} × ${item.quantity} = <strong>${formatPrice(item.product.price * item.quantity)}</strong></p>
-                    <div class="cart-item-qty">
-                      <button onclick="changeQty('${item.id}',${item.quantity-1})">−</button>
-                      <span>${item.quantity}</span>
-                      <button onclick="changeQty('${item.id}',${item.quantity+1})">+</button>
+          <div class="grid gap-8 lg:grid-cols-[1.5fr_420px] items-start">
+            <section class="cart-shell shadow-[0_12px_24px_0_rgba(0,0,0,0.09)] bg-black/[0.02] border-4 border-white">
+              <div id="cart-items" class="p-5">
+                ${items.map(item => `
+                  <article class="grid gap-4 grid-cols-[110px_1fr_auto] items-center py-5 border-b border-gray-200 last:border-b-0" id="ci-${item.id}">
+                    ${item.product.imageUrl
+                      ? `<img src="${item.product.imageUrl}" alt="${item.product.name}" class="w-[110px] h-[110px] object-cover border border-gray-200"/>`
+                      : `<div class="w-[110px] h-[110px] bg-gray-100 border border-gray-200"></div>`
+                    }
+                    <div class="min-w-0">
+                      <h3 class="m-0 text-3xl font-black truncate">${item.product.name}</h3>
+                      <p class="m-0 mt-2 text-lg text-gray-500">${formatPrice(item.product.price)} × ${item.quantity}</p>
+                      <p class="m-0 mt-1 text-xl font-bold text-red-600">${formatPrice(item.product.price * item.quantity)}</p>
+                      <div class="flex items-center gap-3 mt-4">
+                        <button onclick="changeQty('${item.id}',${item.quantity - 1})" class="w-10 h-10 border border-gray-300 bg-white text-2xl font-bold cursor-pointer hover:bg-gray-100">−</button>
+                        <span class="min-w-[2rem] text-center text-2xl font-black">${item.quantity}</span>
+                        <button onclick="changeQty('${item.id}',${item.quantity + 1})" class="w-10 h-10 border border-gray-300 bg-white text-2xl font-bold cursor-pointer hover:bg-gray-100">+</button>
+                      </div>
                     </div>
-                  </div>
-                  <button onclick="removeItem('${item.id}')" style="background:none;border:0;font-size:3rem;cursor:pointer;color:var(--lightGrey);align-self:flex-start" title="Remove">×</button>
-                </div>`).join('')}
-            </div>
-            <div>
-              <div class="cart-totals">
-                <h3>Your Total</h3>
-                <ul>
-                  ${items.map(i=>`<li><span>${i.product.name} ×${i.quantity}</span><span>${formatPrice(i.product.price*i.quantity)}</span></li>`).join('')}
-                  <li style="font-weight:900;font-size:1.6rem;border-top:3px solid var(--lightGrey);margin-top:1rem;padding-top:1rem"><span>Total</span><span>${formatPrice(total)}</span></li>
-                </ul>
-                <button class="btn checkout-btn" id="checkout-btn" onclick="checkout()">Checkout →</button>
+                    <button onclick="removeItem('${item.id}')" class="self-start bg-transparent border-0 text-5xl leading-none text-gray-300 cursor-pointer hover:text-red-600 transition-colors" title="Remove">&times;</button>
+                  </article>`).join('')}
               </div>
-            </div>
+            </section>
+
+            <aside class="cart-shell shadow-[0_12px_24px_0_rgba(0,0,0,0.09)] bg-black/[0.02] border-4 border-white">
+              <div class="p-5">
+                <h2 class="text-4xl font-black mt-0 mb-5">Order Total</h2>
+                <ul class="m-0 p-0 list-none space-y-3">
+                  ${items.map(item => `
+                    <li class="flex items-start justify-between gap-4 text-lg border-b border-gray-200 pb-3">
+                      <span>${item.product.name} ×${item.quantity}</span>
+                      <span class="font-bold whitespace-nowrap">${formatPrice(item.product.price * item.quantity)}</span>
+                    </li>`).join('')}
+                  <li class="flex items-center justify-between pt-4 text-2xl font-black">
+                    <span>Total</span>
+                    <span>${formatPrice(total)}</span>
+                  </li>
+                </ul>
+                <button class="mt-6 bg-red-600 text-white uppercase text-2xl font-medium px-6 py-3 -skew-x-2 border-0 cursor-pointer transition-opacity hover:opacity-85 w-full disabled:opacity-50" id="checkout-btn" onclick="checkout()">Checkout</button>
+              </div>
+            </aside>
           </div>`
-      } catch(err) {
-        document.getElementById('cart-container').innerHTML = `<div class="error-message"><p><strong>Error:</strong> ${err.message}</p></div>`
+      } catch (err) {
+        document.getElementById('cart-container').innerHTML = `<div class="p-4 border-l-4 border-red-600 bg-red-50 text-red-700"><p><strong>Error:</strong> ${err.message}</p></div>`
       }
     }
 
     window.changeQty = async (id, qty) => {
       if (qty < 1) return removeItem(id)
-      try { await api(`/cart/${id}`,{method:'PATCH',body:JSON.stringify({quantity:qty})}); loadCart() }
-      catch(err) { toast(err.message,'error') }
+      try {
+        await api(`/cart/${id}`, { method: 'PATCH', body: JSON.stringify({ quantity: qty }) })
+        loadCart()
+      } catch (err) {
+        toast(err.message, 'error')
+      }
     }
+
     window.removeItem = async (id) => {
-      try { await api(`/cart/${id}`,{method:'DELETE'}); toast('Removed!'); loadCart() }
-      catch(err) { toast(err.message,'error') }
+      try {
+        await api(`/cart/${id}`, { method: 'DELETE' })
+        toast('Removed!')
+        loadCart()
+      } catch (err) {
+        toast(err.message, 'error')
+      }
     }
+
     window.checkout = async () => {
       const btn = document.getElementById('checkout-btn')
-      btn.disabled = true; btn.textContent = 'Placing Order...'
-      try { await api('/orders',{method:'POST'}); toast('Order placed! 🎉'); window.location.href='/pages/orders.html' }
-      catch(err) { toast(err.message,'error'); btn.disabled=false; btn.textContent='Checkout →' }
+      btn.disabled = true
+      btn.textContent = 'Placing Order...'
+      try {
+        await api('/orders', { method: 'POST' })
+        toast('Order placed! 🎉')
+        window.location.href = '/pages/orders.html'
+      } catch (err) {
+        toast(err.message, 'error')
+        btn.disabled = false
+        btn.textContent = 'Checkout'
+      }
     }
   </script>
 </body>

@@ -1,12 +1,22 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma.js'
 import { requireAuth, requireAdmin } from '../middleware/auth.js'
+import { isMailEnabled, sendOrderConfirmationEmail } from '../lib/mailer.js'
 
 const router = Router()
 
 // POST /api/orders  
 router.post('/', requireAuth, async (req, res) => {
   try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, name: true, email: true }
+    })
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
     const cartItems = await prisma.cartItem.findMany({
       where: { userId: req.user.id },
       include: { product: true }
@@ -58,6 +68,18 @@ router.post('/', requireAuth, async (req, res) => {
 
       return newOrder
     })
+
+    if (isMailEnabled()) {
+      try {
+        await sendOrderConfirmationEmail({
+          to: user.email,
+          customerName: user.name,
+          order
+        })
+      } catch (err) {
+        console.error('Order confirmation email failed:', err.message)
+      }
+    }
 
     res.status(201).json(order)
   } catch (err) {
