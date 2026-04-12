@@ -9,8 +9,8 @@ import cartRoutes from "./routes/cart.js";
 import orderRoutes from "./routes/orders.js";
 
 const app = express();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const pub = path.join(__dirname, "../public");
+const root = process.cwd();
+const pub = path.join(root, "public");
 const pages = path.join(pub, "pages");
 
 app.use(cors());
