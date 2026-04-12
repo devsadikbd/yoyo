@@ -71,6 +71,8 @@ model OrderItem {
 enum Role {
   USER
   ADMIN
+  MANAGER
+  CUSTOMER
 }
 
 enum OrderStatus {

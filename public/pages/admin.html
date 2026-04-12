@@ -56,7 +56,7 @@
 
         <section id="metrics" class="grid gap-6 md:grid-cols-4 mb-10"></section>
 
-        <section class="grid gap-10 xl:grid-cols-[1.2fr_1fr]">
+        <section class="grid gap-10 xl:grid-cols-[1.2fr_1fr] mb-10">
           <div>
             <div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
               <h2 class="text-3xl font-black m-0">Products</h2>
@@ -70,6 +70,11 @@
             <div id="orders-panel" class="border border-gray-200 bg-white shadow-[0_12px_24px_0_rgba(0,0,0,0.06)]"></div>
           </div>
         </section>
+
+        <section>
+          <h2 class="text-3xl font-black mb-4">Users & Permissions</h2>
+          <div id="users-panel" class="border border-gray-200 bg-white shadow-[0_12px_24px_0_rgba(0,0,0,0.06)] overflow-x-auto"></div>
+        </section>
       `
 
       loadDashboard()
@@ -79,28 +84,33 @@
       const metricsEl = document.getElementById('metrics')
       const productsEl = document.getElementById('products-panel')
       const ordersEl = document.getElementById('orders-panel')
+      const usersEl = document.getElementById('users-panel')
 
       productsEl.innerHTML = `<div class="p-6 text-xl text-gray-400">Loading products...</div>`
       ordersEl.innerHTML = `<div class="p-6 text-xl text-gray-400">Loading orders...</div>`
+      usersEl.innerHTML = `<div class="p-6 text-xl text-gray-400">Loading users...</div>`
 
       try {
-        const [{ products }, orders] = await Promise.all([
+        const [{ products }, orders, users] = await Promise.all([
           api('/products?limit=100'),
-          api('/orders/all')
+          api('/orders/all'),
+          api('/users')
         ])
 
-        renderMetrics(metricsEl, products, orders)
+        renderMetrics(metricsEl, products, orders, users)
         renderProducts(productsEl, products)
         renderOrders(ordersEl, orders)
+        renderUsers(usersEl, users)
       } catch (err) {
         const errorHtml = `<div class="p-4 border-l-4 border-red-600 bg-red-50 text-red-700">${err.message}</div>`
         metricsEl.innerHTML = ''
         productsEl.innerHTML = errorHtml
         ordersEl.innerHTML = errorHtml
+        usersEl.innerHTML = errorHtml
       }
     }
 
-    function renderMetrics(el, products, orders) {
+    function renderMetrics(el, products, orders, users) {
       const inventoryValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0)
       const lowStock = products.filter(p => p.stock > 0 && p.stock <= 3).length
       const revenue = orders.reduce((sum, o) => sum + o.total, 0)
@@ -110,7 +120,7 @@
         { label: 'Inventory', value: formatPrice(inventoryValue) },
         { label: 'Orders', value: orders.length },
         { label: 'Revenue', value: formatPrice(revenue) },
-        { label: 'Low Stock', value: lowStock }
+        { label: 'Users', value: users.length }
       ]
 
       el.innerHTML = metrics.map(metric => `
@@ -119,6 +129,67 @@
           <p class="text-4xl font-black m-0">${metric.value}</p>
         </article>
       `).join('')
+    }
+
+    function renderUsers(el, users) {
+      if (!users.length) {
+        el.innerHTML = `<div class="p-6 text-xl text-gray-400">No users found.</div>`
+        return
+      }
+
+      el.innerHTML = `
+        <table class="w-full text-left border-collapse min-w-[600px]">
+          <thead>
+            <tr class="text-sm uppercase tracking-wide font-bold text-gray-500 border-b border-gray-200">
+              <th class="px-5 py-4">Name</th>
+              <th class="px-5 py-4">Email</th>
+              <th class="px-5 py-4">Joined</th>
+              <th class="px-5 py-4">Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(user => `
+              <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
+                <td class="px-5 py-4 font-bold">${user.name}</td>
+                <td class="px-5 py-4 text-gray-500">${user.email}</td>
+                <td class="px-5 py-4 text-sm text-gray-500">${new Date(user.createdAt).toLocaleDateString()}</td>
+                <td class="px-5 py-4">
+                  <select data-user-role="${user.id}" class="border border-gray-300 px-3 py-2 text-sm font-bold">
+                    ${['USER', 'ADMIN', 'MANAGER', 'CUSTOMER'].map(role => `
+                      <option value="${role}" ${user.role === role ? 'selected' : ''}>${role}</option>
+                    `).join('')}
+                  </select>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `
+
+      el.querySelectorAll('[data-user-role]').forEach(select => {
+        select.addEventListener('change', async () => {
+          const id = select.getAttribute('data-user-role')
+          const role = select.value
+          if (!confirm(`Are you sure you want to change this user's role to ${role}?`)) {
+            // Revert selection if canceled
+            loadDashboard()
+            return
+          }
+          select.disabled = true
+          try {
+            await api(`/users/${id}/role`, {
+              method: 'PATCH',
+              body: JSON.stringify({ role })
+            })
+            toast(`User role updated to ${role}`)
+          } catch (err) {
+            toast(err.message, 'error')
+            loadDashboard()
+          } finally {
+            select.disabled = false
+          }
+        })
+      })
     }
 
     function renderProducts(el, products) {
