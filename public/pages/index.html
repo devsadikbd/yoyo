@@ -7,6 +7,7 @@
   <link rel="icon" href="/static/favicon.png" type="image/png"/>
   <link rel="stylesheet" href="/css/tailwind.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://js.stripe.com/v3/"></script>
   <style>
     body { font-family: 'Roboto Condensed', sans-serif; }
     .nav-link::after {
@@ -18,12 +19,17 @@
     .nav-link:hover::after { width: calc(100% - 2rem); }
     .nav-link::before {
       content: ''; position: absolute; left: 0; top: 0;
-      width: 2px; height: 100%;
-      background: #d1d5db;
+      width: 2px; height: 100%; background: #d1d5db;
       transform: skewX(-20deg);
     }
-    .cart-panel { transform: translateX(100%); transition: transform 0.3s ease; }
+    .cart-panel { transform: translateX(100%); transition: transform 0.3s ease-in-out; }
     .cart-panel.open { transform: translateX(0); }
+    #card-element {
+      padding: 12px;
+      border: 1px solid #000;
+      background: white;
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body class="bg-white text-[#393939]">
@@ -59,8 +65,10 @@
     <ul id="cart-items-list" class="m-0 p-0 list-none overflow-y-auto"></ul>
     <footer class="border-t-8 border-double border-[#393939] pt-5 mt-5">
       <p id="cart-total" class="m-0 text-4xl font-black"></p>
+      <div id="card-element"></div>
+      <div id="card-errors" role="alert" class="mt-2 text-red-600 text-sm min-h-[1.25rem]"></div>
       <button id="checkout-btn" onclick="doCheckout()"
-        class="mt-3 bg-red-600 text-white uppercase text-2xl font-medium px-6 py-3 -skew-x-2 border-0 cursor-pointer transition-opacity hover:opacity-85 w-full">
+        class="mt-3 bg-red-600 text-white uppercase text-2xl font-medium px-6 py-3 -skew-x-2 border-0 cursor-pointer transition-opacity hover:opacity-85 w-full disabled:opacity-50">
         Checkout
       </button>
     </footer>
@@ -70,6 +78,9 @@
     import { api, getUser, isLoggedIn, toast, formatPrice, renderNav, updateCartBadge } from '/js/utils.js'
     renderNav('main-nav')
     updateCartBadge()
+
+    let stripe;
+    let card;
 
     window.toggleCart = () => {
       if (!isLoggedIn()) { window.location.href = '/pages/login.html'; return }
@@ -109,8 +120,38 @@
             </button>
           </li>`).join('')
         total.textContent = `Total: ${formatPrice(t)}`
+        
+        await initStripe();
       } catch(err) {
         list.innerHTML = `<li class="p-4 border-l-4 border-red-600 bg-red-50 text-red-700">${err.message}</li>`
+      }
+    }
+
+    async function initStripe() {
+      if (stripe) return;
+      try {
+        const { publishableKey } = await api('/config/stripe');
+        if (!publishableKey || publishableKey.includes('...')) {
+           toast('Stripe is not configured correctly.', 'error');
+           return;
+        }
+        stripe = Stripe(publishableKey);
+        const elements = stripe.elements();
+        card = elements.create('card', {
+          style: {
+            base: {
+              fontSize: '18px',
+              fontFamily: '"Roboto Condensed", sans-serif',
+            }
+          }
+        });
+        card.mount('#card-element');
+        card.on('change', (event) => {
+          const displayError = document.getElementById('card-errors');
+          displayError.textContent = event.error ? event.error.message : '';
+        });
+      } catch (err) {
+        console.error('Failed to init Stripe:', err);
       }
     }
 
@@ -121,9 +162,24 @@
 
     window.doCheckout = async () => {
       const btn = document.getElementById('checkout-btn')
-      btn.disabled = true; btn.textContent = 'Placing Order...'
+      btn.disabled = true; btn.textContent = 'Processing Payment...'
       try {
-        await api('/orders', { method: 'POST' })
+        if (!stripe || !card) throw new Error('Stripe has not loaded yet.');
+
+        const { paymentMethod, error } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: card,
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        await api('/orders', { 
+          method: 'POST',
+          body: JSON.stringify({ paymentMethodId: paymentMethod.id })
+        })
+        
         toast('Order placed! 🎉')
         document.getElementById('cart-panel').classList.remove('open')
         window.location.href = '/pages/orders.html'

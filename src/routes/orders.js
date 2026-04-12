@@ -1,12 +1,21 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma.js'
 import { requireAuth, requireAdmin } from '../middleware/auth.js'
-import { isMailEnabled, sendOrderConfirmationEmail } from '../lib/mailer.js'
+import stripe from '../lib/stripe.js'
+import { 
+  isMailEnabled, 
+  sendOrderConfirmationEmail,
+  sendOrderStatusUpdateEmail 
+} from '../lib/mailer.js'
 
 const router = Router()
 
 // POST /api/orders  
 router.post('/', requireAuth, async (req, res) => {
+  console.log('Order request body:', req.body);
+  const { paymentMethodId } = req.body
+  if (!paymentMethodId) return res.status(400).json({ error: 'Payment method is required' })
+
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
@@ -36,7 +45,21 @@ router.post('/', requireAuth, async (req, res) => {
 
     const total = cartItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
 
-    // Create order + decrement stock + clear cart in one transaction
+    // 1. Create and confirm the payment intent
+    const charge = await stripe.paymentIntents.create({
+      amount: total,
+      currency: 'USD',
+      confirm: true,
+      payment_method: paymentMethodId,
+      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+      description: `Sick Fits order for ${user.email}`
+    })
+
+    if (charge.status !== 'succeeded') {
+      return res.status(400).json({ error: 'Payment failed' })
+    }
+
+    // 2. Create order + decrement stock + clear cart in one transaction
     const order = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
@@ -83,6 +106,7 @@ router.post('/', requireAuth, async (req, res) => {
 
     res.status(201).json(order)
   } catch (err) {
+    console.error('Checkout error:', err)
     res.status(500).json({ error: err.message || 'Server error' })
   }
 })
@@ -124,8 +148,20 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
   try {
     const order = await prisma.order.update({
       where: { id: req.params.id },
-      data: { status }
+      data: { status },
+      include: { user: { select: { name: true, email: true } } }
     })
+
+    if (isMailEnabled()) {
+      sendOrderStatusUpdateEmail({
+        to: order.user.email,
+        customerName: order.user.name,
+        order
+      }).catch(err => {
+        console.error('Order status update email failed:', err.message)
+      })
+    }
+
     res.json(order)
   } catch {
     res.status(404).json({ error: 'Order not found' })

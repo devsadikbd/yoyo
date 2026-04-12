@@ -7,12 +7,18 @@
   <link rel="icon" href="/static/favicon.png" type="image/png"/>
   <link rel="stylesheet" href="/css/tailwind.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://js.stripe.com/v3/"></script>
   <style>
     body { font-family: 'Roboto Condensed', sans-serif; }
     .nav-link::after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:0; height:2px; background:#dc2626; transition:width 0.4s cubic-bezier(1,-0.65,0,2.31); }
     .nav-link:hover::after { width:calc(100% - 2rem); }
     .nav-link::before { content:''; position:absolute; left:0; top:0; width:2px; height:100%; background:#d1d5db; transform:skewX(-20deg); }
     .cart-shell::before { content:''; display:block; height:10px; background:linear-gradient(to right,#ff3019 0%,#e2b04a 50%,#ff3019 100%); }
+    #card-element {
+      padding: 12px;
+      border: 1px solid #000;
+      background: white;
+    }
   </style>
 </head>
 <body class="bg-white text-[#393939]">
@@ -39,6 +45,9 @@
 
     renderNav('main-nav')
     updateCartBadge()
+
+    let stripe;
+    let card;
 
     if (!isLoggedIn()) {
       document.getElementById('cart-container').innerHTML = `
@@ -103,12 +112,49 @@
                     <span>${formatPrice(total)}</span>
                   </li>
                 </ul>
-                <button class="mt-6 bg-red-600 text-white uppercase text-2xl font-medium px-6 py-3 -skew-x-2 border-0 cursor-pointer transition-opacity hover:opacity-85 w-full disabled:opacity-50" id="checkout-btn" onclick="checkout()">Checkout</button>
+                
+                <div class="mt-8">
+                  <h3 class="text-xl font-bold mb-3 uppercase">Payment Details</h3>
+                  <div id="card-element"></div>
+                  <div id="card-errors" role="alert" class="mt-2 text-red-600 text-sm"></div>
+                </div>
+
+                <button class="mt-6 bg-red-600 text-white uppercase text-2xl font-medium px-6 py-3 -skew-x-2 border-0 cursor-pointer transition-opacity hover:opacity-85 w-full disabled:opacity-50" id="checkout-btn" disabled onclick="checkout()">Checkout</button>
               </div>
             </aside>
           </div>`
+        
+        await initStripe();
       } catch (err) {
         document.getElementById('cart-container').innerHTML = `<div class="p-4 border-l-4 border-red-600 bg-red-50 text-red-700"><p><strong>Error:</strong> ${err.message}</p></div>`
+      }
+    }
+
+    async function initStripe() {
+      try {
+        const { publishableKey } = await api('/config/stripe');
+        if (!publishableKey || publishableKey.includes('...')) {
+           toast('Stripe is not configured correctly.', 'error');
+           return;
+        }
+        stripe = Stripe(publishableKey);
+        const elements = stripe.elements();
+        card = elements.create('card', {
+          style: {
+            base: {
+              fontSize: '18px',
+              fontFamily: '"Roboto Condensed", sans-serif',
+            }
+          }
+        });
+        card.mount('#card-element');
+        card.on('change', (event) => {
+          const displayError = document.getElementById('card-errors');
+          displayError.textContent = event.error ? event.error.message : '';
+        });
+        document.getElementById('checkout-btn').disabled = false;
+      } catch (err) {
+        console.error('Failed to init Stripe:', err);
       }
     }
 
@@ -135,9 +181,27 @@
     window.checkout = async () => {
       const btn = document.getElementById('checkout-btn')
       btn.disabled = true
-      btn.textContent = 'Placing Order...'
+      btn.textContent = 'Processing Payment...'
+      
       try {
-        await api('/orders', { method: 'POST' })
+        if (!stripe || !card) throw new Error('Stripe has not loaded yet.');
+
+        const { paymentMethod, error } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: card,
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        console.log('Payment method created:', paymentMethod.id);
+
+        await api('/orders', { 
+          method: 'POST',
+          body: JSON.stringify({ paymentMethodId: paymentMethod.id })
+        })
+        
         toast('Order placed! 🎉')
         window.location.href = '/pages/orders.html'
       } catch (err) {

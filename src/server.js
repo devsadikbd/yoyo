@@ -22,6 +22,10 @@ app.get("/favicon.ico", (_, res) =>
   res.sendFile(path.join(pub, "static", "favicon.png")),
 );
 
+app.get("/api/config/stripe", (_, res) => {
+  res.json({ publishableKey: process.env.NEXT_PUBLIC_STRIPE_KEY });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
@@ -47,6 +51,9 @@ app.get("/pages/product", (_, res) =>
 );
 app.get("/pages/admin", (_, res) =>
   res.sendFile(path.join(pages, "admin.html")),
+);
+app.get("/pages/reset", (_, res) =>
+  res.sendFile(path.join(pages, "reset.html")),
 );
 app.get("/admin", (_, res) => res.sendFile(path.join(pages, "admin.html")));
 

@@ -284,9 +284,23 @@
           }
         });
 
-      document.getElementById("reset-form").addEventListener("submit", (e) => {
+      document.getElementById("reset-form").addEventListener("submit", async (e) => {
         e.preventDefault();
-        toast("Password reset coming soon!");
+        const data = Object.fromEntries(new FormData(e.target));
+        const fs = e.target.querySelector("fieldset");
+        fs.disabled = true;
+        try {
+          const res = await api("/auth/request-reset", {
+            method: "POST",
+            body: JSON.stringify(data),
+          });
+          toast(res.message);
+          e.target.reset();
+        } catch (err) {
+          toast(`Error: ${err.message}`, true);
+        } finally {
+          fs.disabled = false;
+        }
       });
     </script>
   </body>
