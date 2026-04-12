@@ -65,6 +65,10 @@ app.use((err, req, res, _next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log(`Sick Fits running → http://localhost:${PORT}`),
-);
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () =>
+    console.log(`Sick Fits running → http://localhost:${PORT}`),
+  );
+}
+
+export default app;
